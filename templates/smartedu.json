@@ -1,0 +1,60 @@
+{
+  "siteId": "smartedu_jiangsu",
+  "siteName": "江苏智慧教育",
+  "urlPatterns": [
+    "https://basic.jiangsu.smartedu.cn/cloudCourse/*",
+    "https://basic.jiangsu.smartedu.cn/*/practice/*",
+    "https://smartedu.cn/*"
+  ],
+  "urlRegex": "^https?://(?:.*\\.)?smartedu\\.cn/",
+  "version": "1.0.0",
+  "createdAt": "2026-05-10",
+  "lastUpdated": "2026-05-10",
+  "description": "江苏智慧教育云课程平台（学生端竞赛练习系统）",
+  "selectors": {
+    "questionContainer": ".question-item, .item-content, [class*='question'], [class*='problem']",
+    "questionTypes": {
+      "detectByClass": true,
+      "single": {
+        "container": "[class*='single'], [class*='radio'], .question-type-1, .question-radio",
+        "title": ".question-stem, .problem-title, .title, .stem, [class*='stem']",
+        "optionsContainer": ".option-group, .options, .choices, [class*='option']",
+        "optionItem": ".option-item, .choice-item, [class*='choice'], label",
+        "optionInput": "input[type='radio']",
+        "optionLabel": ".option-text, .choice-text, label, span",
+        "clickTarget": "input[type='radio']"
+      },
+      "multiple": {
+        "container": "[class*='multiple'], [class*='checkbox'], .question-type-2, .question-checkbox",
+        "title": ".question-stem, .problem-title, .title, .stem, [class*='stem']",
+        "optionsContainer": ".option-group, .options, .choices, [class*='option']",
+        "optionItem": ".option-item, .choice-item, [class*='choice'], label",
+        "optionInput": "input[type='checkbox']",
+        "optionLabel": ".option-text, .choice-text, label, span",
+        "clickTarget": "input[type='checkbox']"
+      },
+      "fill": {
+        "container": "[class*='blank'], [class*='fill'], .question-type-3, .question-fill, textarea, input[type='text']",
+        "title": ".question-stem, .problem-title, .title, .stem, [class*='stem']",
+        "inputsContainer": ".answer-area, .input-area, [class*='input']",
+        "inputs": "textarea, input[type='text'], input:not([type])"
+      }
+    },
+    "questionIndex": "data-index, data-id, data-question-id",
+    "requiredMark": ".required, [class*='required']"
+  },
+  "features": {
+    "hasQuestionIndex": true,
+    "hasDataAttribute": true,
+    "inputsHidden": false,
+    "needClickWrapper": false,
+    "autoScrollSupport": true,
+    "singlePageApp": true
+  },
+  "notes": "江苏智慧教育平台是Vue/React等框架构建的SPA应用。题目通过动态渲染呈现，需要确保页面已加载。建议在识别失败时回退到AI分析。题目可能通过data属性或class动态标记。",
+  "hints": {
+    "needsWait": "页面为动态加载，建议等待500ms后再扫描",
+    "scrolling": "题目可能需要滚动才能全部加载，可能需要多次扫描",
+    "dynamic": "选择器可能因版本更新而改变，建议定期验证"
+  }
+}
