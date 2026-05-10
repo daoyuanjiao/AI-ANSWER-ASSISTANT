@@ -4,6 +4,26 @@
   margin-bottom: 24px;
 }
 
+.template-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.template-section-header h2 {
+  margin: 0;
+  font-size: 16px;
+  color: #111827;
+}
+
+.template-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .template-list {
   display: flex;
   flex-direction: column;

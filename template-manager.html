@@ -26,8 +26,24 @@
       
       <!-- 模板列表 -->
       <div class="template-section">
+        <div class="template-section-header">
+          <h2>内置模板</h2>
+          <div class="template-toolbar">
+            <button class="btn btn-secondary" id="importTemplateBtn">导入模板</button>
+            <input type="file" id="importTemplateInput" accept=".json" style="display:none" />
+          </div>
+        </div>
         <div class="template-list" id="builtInList">
           <!-- 内置模板列表 -->
+        </div>
+      </div>
+
+      <div class="template-section">
+        <div class="template-section-header">
+          <h2>自定义模板</h2>
+        </div>
+        <div class="template-list" id="customList">
+          <!-- 自定义模板列表 -->
         </div>
       </div>
 
@@ -35,7 +51,7 @@
   </div>
 
   <!-- 隐藏的iframe用于导航 -->
-  <iframe id="navFrame" style="display: none;"></iframe>
+  <iframe id="navFrame" ></iframe>
 
   <script src="modules/site-matcher.js"></script>
   <script src="modules/template-manager.js"></script>
