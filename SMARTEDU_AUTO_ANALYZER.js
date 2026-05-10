@@ -1,16 +1,30 @@
 /**
- * 智慧教育平台 - 自动模板分析工具
+ * 🎯 通用网站模板自动分析工具 v2.0
+ * 
+ * 支持任何网站的题目识别！
  * 
  * 使用方法:
- * 1. 打开要分析的网页
+ * 1. 打开任意包含题目的网页
  * 2. 按 F12 打开开发者工具
- * 3. 复制下方代码到 Console 中执行
- * 4. 根据输出结果生成完整的选择器
+ * 3. 复制下方所有代码到 Console 中执行
+ * 4. 根据输出结果生成模板
+ * 
+ * 支持的题型:
+ * - 单选题 (radio buttons)
+ * - 多选题 (checkboxes)
+ * - 填空题 (text inputs/textarea)
+ * 
+ * 可用于: 问卷星、腾讯问卷、江苏智慧教育、学习通、超星等任何平台
  */
 
 // ============ 开始执行 ============
 
-console.log('%c开始分析江苏智慧教育平台结构...', 'color: #4CAF50; font-size: 14px; font-weight: bold;');
+const siteName = prompt('请输入网站名称 (如: 江苏智慧教育, 问卷星, 学习通等):') || '未命名网站';
+const siteUrl = window.location.href;
+
+console.log(`%c开始分析: ${siteName}`, 'color: #4CAF50; font-size: 14px; font-weight: bold;');
+console.log(`%c网址: ${siteUrl}`, 'color: #666; font-size: 12px;');
+console.log(`%c时间: ${new Date().toLocaleString()}`, 'color: #666; font-size: 12px;');
 
 // 1. 获取所有潜在的题目容器
 console.log('\n%c[步骤1] 检测题目容器...', 'color: #2196F3; font-weight: bold;');
@@ -196,4 +210,60 @@ console.log('多选题数:', document.querySelectorAll('${bestContainer[0]} inpu
 console.log('填空题数:', document.querySelectorAll('${bestContainer[0]} textarea, ${bestContainer[0]} input[type="text"]').length);
 `);
 
-console.log('%c分析完成！', 'color: #4CAF50; font-size: 14px; font-weight: bold;');
+// 10. 生成完整的模板JSON对象
+console.log('\n%c[完整模板] 复制以下JSON到模板文件:', 'color: #FF5722; font-weight: bold;');
+
+// 提取关键信息
+const siteIdFromUrl = new URL(siteUrl).hostname.replace(/\./g, '_').replace('https://', '');
+
+const completeTemplate = {
+  siteId: `${siteIdFromUrl}`,
+  siteName: siteName,
+  urlPatterns: [
+    `${new URL(siteUrl).protocol}//${new URL(siteUrl).hostname}/*`
+  ],
+  urlRegex: `^${new URL(siteUrl).protocol.replace(':', '')}(?:.*\\.)?${new URL(siteUrl).hostname.replace(/\./g, '\\.')}`,
+  version: "1.0.0",
+  createdAt: new Date().toISOString().split('T')[0],
+  lastUpdated: new Date().toISOString().split('T')[0],
+  description: `${siteName}在线答题系统`,
+  selectors: suggestedTemplate.selectors,
+  features: {
+    hasQuestionIndex: true,
+    hasDataAttribute: false,
+    inputsHidden: false,
+    needClickWrapper: false,
+    autoScrollSupport: false,
+    singlePageApp: false
+  },
+  notes: `自动生成于 ${new Date().toLocaleString()}。请根据实际HTML结构调整选择器。`
+};
+
+console.log(JSON.stringify(completeTemplate, null, 2));
+
+// 11. 生成文件名建议
+console.log('\n%c[建议] 保存文件名:', 'color: #FF9800; font-weight: bold;');
+const templateFileName = siteIdFromUrl.split('_')[0] || 'template';
+console.log(`templates/${templateFileName}.json`);
+
+// 12. 复制按钮辅助
+console.log('\n%c[复制助手]', 'color: #00BCD4; font-weight: bold;');
+const jsonStr = JSON.stringify(completeTemplate, null, 2);
+console.log('点击下方复制完整的模板JSON:');
+console.log(`%c点击复制 %c`, 'background: #4CAF50; color: white; padding: 8px 15px; border-radius: 4px; cursor: pointer;', '');
+
+// 创建可复制的文本
+window.__templateJson = jsonStr;
+console.log('%c点击下方可将JSON复制到剪贴板:', 'color: #666;');
+console.log('%cPrompt:代码已准备在全局变量 window.__templateJson 中，执行下方代码复制到剪贴板:', 'color: #FF9800;');
+console.log(`
+// 执行这行代码将JSON复制到剪贴板
+navigator.clipboard.writeText(window.__templateJson)
+  .then(() => console.log('%c✓ JSON已复制到剪贴板！', 'color: #4CAF50; font-weight: bold;'))
+  .catch(() => {
+    alert('复制失败，请手动复制Console中的JSON');
+    console.log(window.__templateJson);
+  });
+`);
+
+console.log('%c✓ 分析完成！', 'color: #4CAF50; font-size: 14px; font-weight: bold;');
