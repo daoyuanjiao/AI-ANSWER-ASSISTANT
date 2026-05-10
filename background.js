@@ -31,12 +31,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function callAI(config, prompt, mode = 'answer') {
   const { baseUrl, apiKey, model } = config;
 
-  // 如果baseUrl不包含完整路径，添加/chat/completions
-  let url = baseUrl.replace(/\/$/, '');
-  if (!url.endsWith('/chat/completions')) {
-    url += '/chat/completions';
+  // 检测是否是Gemini API
+  if (model && (model.toLowerCase().startsWith('gemini-') || model.toLowerCase().startsWith('gemini2.0'))) {
+    return await callGeminiAPI(apiKey, model, prompt, mode);
   }
-  
+
   // 根据模式选择不同的系统提示
   const systemPrompts = {
     answer: `你是一个专业的答题助手。用户会给你题目，你需要分析题目并给出正确答案。
@@ -70,6 +69,12 @@ async function callAI(config, prompt, mode = 'answer') {
 
 只返回JSON格式，不要有其他内容。确保JSON格式正确。`
   };
+
+  // OpenAI兼容API调用
+  let url = baseUrl.replace(/\/$/, '');
+  if (!url.endsWith('/chat/completions')) {
+    url += '/chat/completions';
+  }
 
   const response = await fetch(url, {
     method: 'POST',
@@ -137,6 +142,124 @@ async function callAI(config, prompt, mode = 'answer') {
   }
 
   return data.choices[0].message.content;
+}
+
+// Google Generative AI (Gemini) API 调用
+async function callGeminiAPI(apiKey, model, prompt, mode = 'answer') {
+  const systemPrompts = {
+    answer: `你是一个专业的答题助手。用户会给你题目，你需要分析题目并给出正确答案。
+
+请严格按照以下JSON格式返回答案：
+{
+  "type": "single|multiple|fill",
+  "answer": "答案内容",
+  "explanation": "简短解释"
+}
+
+对于不同题型的答案格式：
+- 单选题(single): answer为选项字母，如 "A" 或 "B"
+- 多选题(multiple): answer为选项字母数组，如 ["A", "B", "C"]
+- 填空题(fill): answer为填空内容，如果有多个空，用数组表示 ["答案1", "答案2"]
+
+注意：
+1. 只返回JSON，不要有其他内容
+2. 确保JSON格式正确
+3. 答案要准确`,
+
+    analyze: `你是一个专业的网页结构分析助手。你需要分析HTML页面结构，识别其中的题目结构（单选题、多选题、填空题）。
+
+【重要】这一步只需要识别题目结构，不需要给出答案！
+
+分析要点：
+1. 识别所有题目，提取完整的题干文本
+2. 识别每道题的选项或输入框
+3. 为每个可交互元素（选项、输入框）生成精确的CSS选择器
+4. 不要分析答案，答案会在后续步骤单独获取
+
+只返回JSON格式，不要有其他内容。确保JSON格式正确。`
+  };
+
+  const systemPrompt = systemPrompts[mode] || systemPrompts.answer;
+  
+  // Google Generative AI API URL
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: systemPrompt },
+              { text: prompt }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2048,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMsg = `Gemini API请求失败 (${response.status})`;
+      
+      console.error('[AI答题助手] Gemini API错误:', {
+        status: response.status,
+        statusText: response.statusText,
+        response: errorText
+      });
+      
+      try {
+        const errorJson = JSON.parse(errorText);
+        const msg = errorJson.error?.message || '';
+        
+        if (response.status === 400) {
+          errorMsg = 'Gemini: 请求格式错误，请检查模型ID是否正确（如: gemini-pro, gemini-2.0-flash）';
+        } else if (response.status === 401 || response.status === 403) {
+          errorMsg = 'Gemini API Key无效或无权限，请检查配置';
+        } else if (response.status === 429) {
+          errorMsg = 'Gemini API请求过于频繁，请稍后重试';
+        } else if (response.status === 500 || response.status === 502 || response.status === 503) {
+          errorMsg = 'Gemini服务暂时不可用，请稍后重试';
+        } else if (msg) {
+          errorMsg = `Gemini错误: ${msg}`;
+        }
+      } catch (e) {
+        console.error('[AI答题助手] 无法解析Gemini错误响应:', errorText);
+      }
+      
+      throw new Error(errorMsg);
+    }
+
+    const data = await response.json();
+    
+    // 处理Gemini API响应格式
+    if (data.candidates && data.candidates.length > 0) {
+      const candidate = data.candidates[0];
+      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+        const content = candidate.content.parts[0].text;
+        
+        // 检查是否被安全过滤
+        if (candidate.finishReason === 'SAFETY') {
+          throw new Error('Gemini: 响应被安全政策过滤，请尝试重新提问');
+        }
+        
+        return content;
+      }
+    }
+    
+    throw new Error('Gemini API返回格式错误，请检查配置');
+  } catch (error) {
+    console.error('[AI答题助手] Gemini调用异常:', error.message);
+    throw error;
+  }
 }
 
 // 发送统计事件
